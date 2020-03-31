@@ -17,7 +17,7 @@ spec:
       serviceAccountName: che-workspace-controller
       containers:
         - name: che-workspace-controller
-          image: quay.io/che-incubator/che-workspace-controller:nightly
+          image: jpinkney/che-workspace-controller:7.2.0
           imagePullPolicy: Always
           env:
             - name: WATCH_NAMESPACE
@@ -32,13 +32,17 @@ spec:
             - name: webhook-server
               containerPort: 8443
           volumeMounts:
-            - name: webhook-tls-certs
-              mountPath: /tmp/k8s-webhook-server/serving-certs
-              readOnly: true
+          - name: workspace-controller-secure-service
+            mountPath: /tmp/k8s-webhook-server/serving-certs
+            readOnly: true
       volumes:
-        - name: webhook-tls-certs
-          secret:
-            secretName: webhook-server-tls
+        - name: workspace-controller-secure-service
+          projected:
+            sources:
+              - configMap:
+                  name: che-workspace-controller-secure-service
+              - secret:
+                  name: workspace-controller          
 ---
 apiVersion: v1
 kind: Service
@@ -47,6 +51,8 @@ metadata:
     app: che-workspace-controller
   name: workspace-controller
   namespace: che-workspace-controller
+  annotations:
+    service.beta.openshift.io/serving-cert-secret-name: workspace-controller
 spec:
   ports:
     - targetPort: webhook-server
@@ -54,3 +60,11 @@ spec:
       port: 443
   selector:
     app: che-workspace-controller
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: che-workspace-controller-secure-service
+  namespace: che-workspace-controller
+  annotations:
+    service.beta.openshift.io/inject-cabundle: "true"

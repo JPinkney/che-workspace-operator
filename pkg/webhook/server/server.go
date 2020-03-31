@@ -11,10 +11,11 @@
 package server
 
 import (
-	"github.com/che-incubator/che-workspace-operator/internal/cluster"
-	"github.com/che-incubator/che-workspace-operator/pkg/controller/workspace/config"
 	"io/ioutil"
 	"os"
+
+	"github.com/che-incubator/che-workspace-operator/internal/cluster"
+	"github.com/che-incubator/che-workspace-operator/pkg/controller/workspace/config"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
@@ -50,7 +51,7 @@ func ConfigureWebhookServer(mgr manager.Manager) error {
 		return nil
 	}
 
-	CABundle, err = ioutil.ReadFile(webhookServerCertDir + "/ca.crt")
+	CABundle, err = ioutil.ReadFile(webhookServerCertDir + "/service-ca.crt")
 	if os.IsNotExist(err) {
 		log.Info("CA certificate is not found. Webhook server is not set up")
 		return nil
