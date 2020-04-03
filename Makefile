@@ -117,6 +117,7 @@ else
 endif
 	$(TOOL) delete namespace $(NAMESPACE)
 	$(TOOL) delete customresourcedefinitions.apiextensions.k8s.io workspaceroutings.workspace.che.eclipse.org
+	$(TOOL) delete customresourcedefinitions.apiextensions.k8s.io components.workspace.che.eclipse.org
 	$(TOOL) delete customresourcedefinitions.apiextensions.k8s.io workspaces.workspace.che.eclipse.org
 
 ### local: set up cluster for local development
