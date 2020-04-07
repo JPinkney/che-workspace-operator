@@ -34,6 +34,7 @@ The repository contains a Makefile; building and deploying can be configured via
 | `PULL_POLICY` | Image pull policy for controller | `Always` |
 | `WEBHOOK_ENABLED` | Whether webhooks should be enabled in the deployment | `false` |
 | `DEFAULT_ROUTING` | Default routingClass to apply to workspaces that don't specify one | `basic` |
+| `REGISTRY_ENABLED` | Whether the plugin registry should be deployed | `true` |
 
 The makefile supports the following rules:
 
