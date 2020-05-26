@@ -14,7 +14,7 @@ package config
 
 const (
 	serverImageName        = "cherestapis.image.name"
-	defaultServerImageName = "quay.io/che-incubator/che-workspace-crd-rest-apis:7.1.0"
+	defaultServerImageName = "amisevsk/che-rest-apis:v0.0.2"
 
 	sidecarPullPolicy        = "sidecar.pull.policy"
 	defaultSidecarPullPolicy = "Always"
@@ -38,5 +38,5 @@ const (
 	defaultRoutingClass = "basic"
 
 	webhooksEnabled        = "che.webhooks.enabled"
-	defaultWebhooksEnabled = "false"
+	defaultWebhooksEnabled = "true"
 )
