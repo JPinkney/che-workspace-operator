@@ -59,7 +59,7 @@ func InitWebhookServer(ctx context.Context) error {
 		return err
 	}
 
-	return errors.New("TLS is setup. Controller needs to restart to apply changes")
+	return errors.New("TLS has been configured. Controller needs to restart to apply changes")
 }
 
 func syncService(ctx context.Context, crclient client.Client, namespace string) error {
@@ -81,7 +81,9 @@ func syncService(ctx context.Context, crclient client.Client, namespace string) 
 		existingCfg.Spec.ClusterIP = clusterIP
 		copyLabelsAndAnnotations(secureService, existingCfg)
 
-		err = crclient.Update(ctx, existingCfg)
+		secureService.ResourceVersion = existingCfg.ResourceVersion
+		secureService.Spec.ClusterIP = existingCfg.Spec.ClusterIP
+		err = crclient.Update(ctx, secureService)
 		if err != nil {
 			return err
 		}
