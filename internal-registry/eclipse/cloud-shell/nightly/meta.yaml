@@ -24,6 +24,9 @@ spec:
         cookiesAuthEnabled: true
   containers:
    - name: che-machine-exec
-     image: "quay.io/eclipse/che-machine-exec:nightly"
+     image: "jpinkney/che-machine-exec:latest"
+     env:
+     - name: CHE_WORKSPACE_ID_LABEL
+       value: "org.eclipse.che.workspace/id"
      ports:
        - exposedPort: 4444
