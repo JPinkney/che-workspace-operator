@@ -206,24 +206,24 @@ else
 	cd devworkspace-crds && git checkout $(DEVWORKSPACE_API_VERSION) && git reset --hard origin/$(DEVWORKSPACE_API_VERSION)
 endif
 
-### update_terminal_manifests: pull latest web terminal manifests to web-terminal-manifests. Note: pulls master branch
+### update_terminal_manifests: pull latest web terminal manifests to web-terminal-operator. Note: pulls master branch
 update_terminal_manifests:
-	mkdir -p web-terminal-manifests
-	cd web-terminal-manifests && git init || true
-ifneq ($(shell git --git-dir=web-terminal-manifests/.git remote), origin)
-	cd web-terminal-manifests && git remote add origin -f https://github.com/redhat-developer/web-terminal-operator.git
+	mkdir -p web-terminal-operator
+	cd web-terminal-operator && git init || true
+ifneq ($(shell git --git-dir=web-terminal-operator/.git remote), origin)
+	cd web-terminal-operator && git remote add origin -f https://github.com/redhat-developer/web-terminal-operator.git
 else
-	cd web-terminal-manifests && git remote set-url origin https://github.com/redhat-developer/web-terminal-operator.git
+	cd web-terminal-operator && git remote set-url origin https://github.com/redhat-developer/web-terminal-operator.git
 endif
-	cd web-terminal-manifests && git config core.sparsecheckout true
-	cd web-terminal-manifests && echo "deploy/crds/*" >> .git/info/sparse-checkout
-	cd web-terminal-manifests && git fetch --tags -p origin
-ifeq ($(shell cd web-terminal-manifests && git show-ref --verify refs/tags/$(DEVWORKSPACE_API_VERSION) 2> /dev/null && echo "tag" || echo "branch"),tag)
+	cd web-terminal-operator && git config core.sparsecheckout true
+	cd web-terminal-operator && echo "deploy/crds/*" >> .git/info/sparse-checkout
+	cd web-terminal-operator && git fetch --tags -p origin
+ifeq ($(shell cd web-terminal-operator && git show-ref --verify refs/tags/$(DEVWORKSPACE_API_VERSION) 2> /dev/null && echo "tag" || echo "branch"),tag)
 	@echo 'Terminal Manifests are specified from tag'
-	cd web-terminal-manifests && git checkout tags/$(DEVWORKSPACE_API_VERSION)
+	cd web-terminal-operator && git checkout tags/$(DEVWORKSPACE_API_VERSION)
 else
 	@echo 'Terminal Manifests are specified from branch'
-	cd web-terminal-manifests && git checkout $(DEVWORKSPACE_API_VERSION) && git reset --hard origin/$(DEVWORKSPACE_API_VERSION)
+	cd web-terminal-operator && git checkout $(DEVWORKSPACE_API_VERSION) && git reset --hard origin/$(DEVWORKSPACE_API_VERSION)
 endif
 
 ### local: set up cluster for local development
@@ -268,20 +268,20 @@ endif
 
 ### gen_csv: generate the csv for a newer version
 gen_csv:
-	operator-sdk generate csv --apis-dir ./pkg/apis --csv-version 1.0.0 --make-manifests --update-crds --operator-name "Web Terminal" --output-dir ./web-terminal-manifests
+	operator-sdk generate csv --apis-dir ./pkg/apis --csv-version 1.0.0 --make-manifests --update-crds --operator-name "Web Terminal" --output-dir ./web-terminal-operator
 	
 	# filter the deployments so that only the valid deployment is available. See: https://github.com/eclipse/che/issues/17010
-	cat ./web-terminal-manifests/manifests/web\ terminal.clusterserviceversion.yaml | \
+	cat ./web-terminal-operator/manifests/web\ terminal.clusterserviceversion.yaml | \
 	yq -Y \
 	'.spec.install.spec.deployments[] |= select( .spec.selector.matchLabels.app? and .spec.selector.matchLabels.app=="che-workspace-controller")' | \
-	tee ./web-terminal-manifests/manifests/web\ terminal.clusterserviceversion.yaml >>/dev/null
+	tee ./web-terminal-operator/manifests/web\ terminal.clusterserviceversion.yaml >>/dev/null
 
-	cp devworkspace-crds/deploy/crds/workspace.devfile.io_devworkspaces_crd.yaml web-terminal-manifests/manifests
+	cp devworkspace-crds/deploy/crds/workspace.devfile.io_devworkspaces_crd.yaml web-terminal-operator/manifests
 
 ### olm_build_bundle: build the bundle that will be stored on quay
 olm_build_bundle: _print_vars
 	# Create the bundle and push it to quay
-	operator-sdk bundle create $(BUNDLE_IMG) --channels alpha --package web-terminal --directory web-terminal-manifests/manifests --overwrite --output-dir generated
+	operator-sdk bundle create $(BUNDLE_IMG) --channels alpha --package web-terminal --directory web-terminal-operator/manifests --overwrite --output-dir generated
 	docker push $(BUNDLE_IMG)
 
 #### olm_create_index: to create / update and push an index that contains the bundle
