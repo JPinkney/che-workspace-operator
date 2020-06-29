@@ -39,6 +39,11 @@ spec:
             - name: webhook-tls-certs
               mountPath: /tmp/k8s-webhook-server/serving-certs
               readOnly: true
+          lifecycle:
+              preStop:
+                exec:
+                  command:
+                    - "/usr/local/bin/che-workspace-controller-pre-stop"
       volumes:
         - name: webhook-tls-certs
           projected:

@@ -16,9 +16,16 @@ RUN CGO_ENABLED=0 GOOS=linux go build \
   -asmflags all=-trimpath=/ \
   cmd/manager/main.go
 
+RUN CGO_ENABLED=0 GOOS=linux go build \
+  -o _output/bin/che-workspace-controller-pre-stop \
+  -gcflags all=-trimpath=/ \
+  -asmflags all=-trimpath=/ \
+  prestop/main.go
+
 FROM registry.access.redhat.com/ubi8-minimal:8.1-279
 COPY --from=builder /che-workspace-operator/_output/bin/che-workspace-controller /usr/local/bin/che-workspace-controller
 COPY --from=builder /che-workspace-operator/internal-registry  internal-registry
+COPY --from=builder /che-workspace-operator/_output/bin/che-workspace-controller-pre-stop /usr/local/bin/che-workspace-controller-pre-stop
 
 ENV USER_UID=1001 \
     USER_NAME=che-workspace-controller

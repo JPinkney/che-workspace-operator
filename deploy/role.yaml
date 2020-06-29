@@ -149,3 +149,11 @@ rules:
   - update
   - watch
   - deletecollection
+- apiGroups:
+    - operators.coreos.com
+  resources:
+    - subscription
+    - subscriptions
+  verbs:
+    - get
+    - list
