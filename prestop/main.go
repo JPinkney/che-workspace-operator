@@ -13,25 +13,13 @@
 package main
 
 import (
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/runtime/serializer"
-	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/rest"
 	"log"
 
-	devconfig "github.com/devfile/devworkspace-operator/pkg/config"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
-)
-
-
-var (
-	OP_GVR = schema.GroupVersionResource{
-		Group: "operators.coreos.com",
-		Version: "v1",
-		Resource: "subscription",
-	}
 )
 
 func main() {
@@ -40,58 +28,77 @@ func main() {
 		log.Fatal("Failed when attempting to retrieve in cluster config: ", err)
 	}
 
-	clientset, err := kubernetes.NewForConfig(config)
-	if err != nil {
-		log.Fatal("Failed when attempting to retrieve in cluster config: ", err)
-	}
-
+	name := "web-terminal"
+	namespace := "openshift-operators"
 	dynamic, err := dynamic.NewForConfig(config)
 	if err != nil {
-		log.Fatal("Failed when attempting to retrieve in cluster config: ", err)
+		log.Fatal("Failed when trying to get the dynamic config: ", err)
 	}
-
-	crdClient := dynamic.Resource(OP_GVR)
-	crd, errcrd := crdClient.Get("eclipse-che", metav1.GetOptions{})
-	if errcrd != nil {
-		log.Fatal("Failed when attempting to get dynamic resource: ", err)
-	}
-	log.Println(crd.GetName())
-	log.Println(crd)
-
-
-	crdConfig := *config
-	crdConfig.ContentConfig.GroupVersion = &schema.GroupVersion{Group: "operators.coreos.com", Version: "v1"}
-	crdConfig.APIPath = "/apis"
-	crdConfig.NegotiatedSerializer = serializer.NewCodecFactory(scheme.Scheme)
-	crdConfig.UserAgent = rest.DefaultKubernetesUserAgent()
-
-	exampleRestClient, err := rest.UnversionedRESTClientFor(&crdConfig)
+	isAvailable, err := isSubscriptionAvailable(dynamic, name, namespace)
 	if err != nil {
-		log.Fatal("Failed trying to get unversioned rest client: ", err)
+		log.Fatal("Failed when trying to find out if the subscription is available: ", err)
 	}
 
-	b, err := exampleRestClient.Get().Resource("pods").Do().Raw()
+	if isAvailable {
+		log.Println("Subscription is available")
+		err = deleteCustomResources(dynamic, namespace)
+		if err != nil {
+			log.Fatal("Failed when trying to delete custom resources: ", err)
+		}
+	} else {
+		log.Println("Subscription is unavailable")
+	}
+}
+
+/**
+ * Check if the subscription to web-terminal is available.
+ * If an error is found return that it's available so that custom resources don't get cleaned up.
+ * Only return false when the get request to the resource results in an isNotFound error
+ */
+func isSubscriptionAvailable(config dynamic.Interface, name, namespace string) (bool, error) {
+	OpGvr := schema.GroupVersionResource{
+		Group: "operators.coreos.com",
+		Version: "v1alpha1",
+		Resource: "subscriptions",
+	}
+
+	crdClient := config.Resource(OpGvr)
+
+
+	b, err := crdClient.Namespace(namespace).List(metav1.ListOptions{})
+	log.Fatal(b, err)
+
+	_, err = crdClient.Namespace(namespace).Get(name, metav1.GetOptions{})
 	if err != nil {
-		log.Fatal("Failed when trying to get subscription: ", err)
+		if apierrors.IsNotFound(err) {
+			return false, nil
+		}
+		return false, err
 	}
-	log.Println(string(b))
+	return true, nil
+}
 
-	/**
-	 * My guess is that when the installplan is deleted or the crds are deleted then its not upgrading?
-	 * We need to make sure that it doesn't delete all the workspaces when upgrading but does when its actually uninstalling
-	 *
-	 */
+/**
+ * Clean up all the devworkspace custom resources
+ */
+func deleteCustomResources(config dynamic.Interface, namespace string) error {
+	OpGvr := schema.GroupVersionResource{
+		Group: "workspace.devfile.io",
+		Version: "v1alpha1",
+		Resource: "devworkspaces",
+	}
 
-	clientset.AppsV1()
-
-	log.Println("Attempting to delete all the deployments with label 2: " + devconfig.WorkspaceIDLabel)
-	deployments, err := clientset.AppsV1().Deployments("che-workspace-controller").List(metav1.ListOptions{LabelSelector: "controller.devfile.io/workspace_id"})
+	crdClient := config.Resource(OpGvr)
+	devworkspaces, err := crdClient.Namespace(namespace).List(metav1.ListOptions{})
 	if err != nil {
-		log.Fatal("Failed when attempting to delete all deployments with label: "+devconfig.WorkspaceIDLabel, err)
+		return err
 	}
-	for _, s := range deployments.Items {
-		log.Println("Attempting to delete pod: " + s.Name)
-		clientset.AppsV1().Deployments("che-workspace-controller").Delete(s.Name, &metav1.DeleteOptions{})
+	for _, devworkspace := range devworkspaces.Items {
+		err = crdClient.Namespace(namespace).Delete(devworkspace.GetName(), &metav1.DeleteOptions{})
+		if err != nil {
+			return err
+		}
 	}
-	log.Println("Deleted all the deployments with label: " + devconfig.WorkspaceIDLabel)
+	log.Println("Deleted all the devworkspaces")
+	return nil
 }
