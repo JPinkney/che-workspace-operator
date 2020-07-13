@@ -12,7 +12,6 @@ package handler
 
 import (
 	"context"
-	"github.com/pkg/errors"
 	"net/http"
 
 	"github.com/devfile/devworkspace-operator/pkg/config"
@@ -32,7 +31,7 @@ func (h *WebhookHandler) ValidateExecOnConnect(ctx context.Context, req admissio
 	}, &p)
 
 	if err != nil {
-		return admission.Errored(http.StatusInternalServerError, errors.New(" I have failed at the expected part. Name is: " + req.Name + " Namespace is: " + req.Namespace + " " + err.Error()))
+		return admission.Errored(http.StatusInternalServerError, err)
 	}
 
 	_, ok := p.Labels[config.WorkspaceIDLabel]
