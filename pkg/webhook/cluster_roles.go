@@ -81,9 +81,12 @@ func getSpecClusterRole() (*v1.ClusterRole, error) {
 				},
 				Resources: []string{
 					"serviceaccounts",
+					"pods",
 				},
 				Verbs: []string{
 					"get",
+					"list",
+					"watch",
 				},
 			},
 		},

@@ -83,7 +83,7 @@ func Configure(ctx context.Context) error {
 		log.Info("Created workspace mutating webhook configuration")
 	}
 
-	server.GetWebhookServer().Register(mutateWebhookPath, &webhook.Admission{Handler: NewResourcesMutator(saUID, saName)})
+	server.GetWebhookServer().Register(mutateWebhookPath, &webhook.Admission{Handler: NewResourcesMutator(saUID, saName, c)})
 
 	if err := c.Create(ctx, validateWebhookCfg); err != nil {
 		if !apierrors.IsAlreadyExists(err) {
@@ -106,7 +106,7 @@ func Configure(ctx context.Context) error {
 		log.Info("Created workspace validating webhook configuration")
 	}
 
-	server.GetWebhookServer().Register(validateWebhookPath, &webhook.Admission{Handler: NewResourcesValidator(saUID, saName)})
+	server.GetWebhookServer().Register(validateWebhookPath, &webhook.Admission{Handler: NewResourcesValidator(saUID, saName, c)})
 
 	return nil
 }

@@ -13,10 +13,10 @@ package workspace
 import (
 	"context"
 	"fmt"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/devfile/devworkspace-operator/webhook/workspace/handler"
 	"k8s.io/api/admission/v1beta1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
@@ -27,8 +27,8 @@ type ResourcesMutator struct {
 	*handler.WebhookHandler
 }
 
-func NewResourcesMutator(controllerUID, controllerSAName string) *ResourcesMutator {
-	return &ResourcesMutator{&handler.WebhookHandler{ControllerUID: controllerUID, ControllerSAName: controllerSAName}}
+func NewResourcesMutator(controllerUID, controllerSAName string, client client.Client) *ResourcesMutator {
+	return &ResourcesMutator{&handler.WebhookHandler{ControllerUID: controllerUID, ControllerSAName: controllerSAName, Client: client}}
 }
 
 // ResourcesMutator verify if operation is a valid from Workspace controller perspective
@@ -70,14 +70,6 @@ func (m *ResourcesMutator) Handle(ctx context.Context, req admission.Request) ad
 	return admission.Denied(fmt.Sprintf("This admission controller is not designed to handle %s operation for %s. Notify an administrator about this issue", req.Operation, req.Kind))
 }
 
-// WorkspaceMutator implements inject.Client.
-// A client will be automatically injected.
-
-// InjectClient injects the client.
-func (m *ResourcesMutator) InjectClient(c client.Client) error {
-	m.Client = c
-	return nil
-}
 
 // WorkspaceMutator implements admission.DecoderInjector.
 // A decoder will be automatically injected.
